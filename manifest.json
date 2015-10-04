@@ -1,0 +1,49 @@
+{
+    "name": "Super Nintendo Emulator (snes9x)",
+    "description": "Super Nintendo Emulator",
+    "version": "0.0.2",
+    "minimum_chrome_version": "44",
+    "manifest_version": 2,
+    "offline_enabled": true,
+    "file_handlers": {
+        "any": {
+            "extensions": [
+                "smc"
+            ]
+        }
+    },
+    "permissions": [
+        {"fileSystem":["retainEntries", "directory"]},
+	"pointerLock",
+        "fullscreen",
+        "identity",
+        "storage"
+    ],
+    "app": {
+        "background": {
+            "scripts": ["background.js"]
+        }
+    },
+    "icons": { 
+        "16": "icons/snes-16.png", 
+        "32": "icons/snes-32.png", 
+        "48": "icons/snes-48.png", 
+        "64": "icons/snes-64.png",
+        "96": "icons/snes-96.png",
+        "128": "icons/snes-128.png"
+    },
+    "platforms": [
+        {
+            "nacl_arch": "x86-64",
+            "sub_package_path": "_platform_specific/x86-64/"
+        },
+        {
+            "nacl_arch": "x86-32",
+            "sub_package_path": "_platform_specific/x86-32/"
+        },
+        {
+            "nacl_arch": "arm",
+            "sub_package_path": "_platform_specific/arm/"
+        }
+    ]
+}
