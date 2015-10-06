@@ -4,7 +4,52 @@
  * found in the LICENSE file.
  */
 
+FS_SIZE = 1024*1024*50 // 50mb?
+
+function renderROM(entry) {
+    var p = document.createElement('p')
+    var a = document.createElement('a')
+    a.href = '#'
+    a.innerText = entry.name
+    a.addEventListener('click', function(e) {
+        startGame(entry.name)
+    })
+    p.appendChild(a)
+    return p
+}
+
+function renderROMs() {
+    var div = document.getElementById('roms')
+    if (ROMS.length > 0) {
+        div.innerHTML = '<p>Previously entered ROMs</p>'
+    } else {
+        div.innerHTML = ''
+    }
+    for (var i=0;i<ROMS.length;i++) {
+        var p = renderROM(ROMS[i])
+        div.appendChild(p)
+    }
+}
+
 function domContentLoaded() {
+
+    window.ROMS = []
+    
+    webkitRequestFileSystem(window.PERSISTENT, FS_SIZE, function(fs) {
+        console.log('got pers fs')
+        var reader = fs.root.createReader()
+        console.log('reader',reader)
+        reader.readEntries( function(entries) {
+            console.log('entries',entries)
+            for (var i=0; i<entries.length; i++) {
+                if (entries[i].name != '.snes9x') {
+                    ROMS.push(entries[i])
+                }
+            }
+            renderROMs()
+        })
+    }, function(e) { console.error('error reading FS',e) } )
+    
   document.getElementById('romfile').addEventListener(
       'change', handleFileSelect, false);
 }
@@ -24,7 +69,7 @@ function handleFileSelect(evt) {
 
     console.log('window.webkitRequestFileSystem');
     window.webkitRequestFileSystem(
-        window.TEMPORARY, result.size, onRequestQuotaSuccess, errorHandler);
+        window.PERSISTENT, FS_SIZE, onRequestQuotaSuccess, errorHandler);
   }
 
   function onRequestQuotaSuccess(fs) {

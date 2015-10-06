@@ -9,6 +9,8 @@
   <title>Snes9x</title>
   <script type="text/javascript" src="snes9x.js"></script>
   <style>
+html, body { overflow: auto }
+
     .icon {
       margin: 1px;
       text-align: center;
@@ -106,8 +108,14 @@
   </style>
 </head>
 <body>
-  <label for="romfile">Select ROM (*.smc): </label>
+
+
+
+
+
+  <label for="romfile">Enter new ROM (*.smc): </label>
   <input type="file" id="romfile">
+  <hr />
   <div id="listener"></div>
   <table>
     <thead>
@@ -194,5 +202,8 @@
       <td>Shift+F9</td>
     </tr>
   </table>
+
+  <div id="roms">No ROM files (games) have been entered yet.</div>
+
 </body>
 </html>

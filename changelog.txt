@@ -1,3 +1,6 @@
+version 0.0.4
+- enable persistent game save storage
+
 version 0.0.3
 - add sfc file_handler
 
