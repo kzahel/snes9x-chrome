@@ -1,10 +1,47 @@
-/*
- * Copyright (c) 2013 The Native Client Authors. All rights reserved.
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
+var reload = chrome.runtime.reload;
 
 FS_SIZE = 1024*1024*50 // 50mb?
+
+function gamepads() {
+    var conn = 'webkitGamepadConnected' // "gamepadconnected"
+    var disconn = 'webkitGamepadDisconnected' //gamepaddisconnected
+    window.addEventListener(conn, function(e) {
+        console.log("gamepadconnected: Gamepad connected at index %d: %s. %d buttons, %d axes.",
+                    e.gamepad.index, e.gamepad.id,
+                    e.gamepad.buttons.length, e.gamepad.axes.length);
+    });
+
+    window.addEventListener(disconn, function(e) {
+        console.log("gamepaddisconnected: Gamepad disconnected from index %d: %s",
+                    e.gamepad.index, e.gamepad.id);
+    });
+
+
+    var interval;
+
+    if (!('ongamepadconnected' in window)) {
+        // No gamepad events available, poll instead.
+        console.log('setup polling for gamepads')
+        interval = setInterval(pollGamepads, 500);
+    }
+
+    function pollGamepads() {
+        var gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads : []);
+        for (var i = 0; i < gamepads.length; i++) {
+            var gp = gamepads[i];
+            if (gp) {
+                var info = "polling: Gamepad connected at index " + gp.index + ": " + gp.id +
+                    ". It has " + gp.buttons.length + " buttons and " + gp.axes.length + " axes.";
+                console.log('found gamepad',info,gp)
+                //gameLoop();
+                clearInterval(interval);
+            }
+        }
+    }
+
+}
+
+gamepads()
 
 function renderROM(entry) {
     var p = document.createElement('p')
@@ -31,6 +68,13 @@ function renderROMs() {
     }
 }
 
+function maybeLoadROMStartup() {
+    if (false && window.ROMS.length > 0) {
+        startGame(window.ROMS[0].name)
+    }
+    
+}
+
 function domContentLoaded() {
 
     window.ROMS = []
@@ -47,6 +91,8 @@ function domContentLoaded() {
                 }
             }
             renderROMs()
+
+            maybeLoadROMStartup()
         })
     }, function(e) { console.error('error reading FS',e) } )
     
@@ -109,9 +155,11 @@ var SCALE=2
   nacl.setAttribute('id', 'snes9x');
   nacl.setAttribute('width', snesWidth * SCALE);  // Scale screen by 2x.
     nacl.setAttribute('height', snesHeight * SCALE);
+    nacl.setAttribute('PS_STDOUT','dev/tty');
+    nacl.setAttribute('PS_TTY_PREFIX','tty:');
+    nacl.setAttribute('PS_EXIT_MESSAGE','exit');
 
 
-    
     
   nacl.setAttribute('src', 'snes9x.nmf');
   nacl.setAttribute('type', 'application/x-nacl');
@@ -121,7 +169,13 @@ var SCALE=2
 
   // Remove previous embed element.
   document.getElementById('listener').innerHTML = '';
-  document.getElementById('listener').appendChild(nacl);
+    document.getElementById('listener').appendChild(nacl);
+
+    listener.addEventListener('message', function(message) {
+        if (typeof message.data == 'string' && message.data.startsWith('tty:')) {
+            console.log('%c ' + message.data.slice(4,message.data.length), 'color:#a32')
+        }
+    }, true);
 }
 
 document.addEventListener('DOMContentLoaded', domContentLoaded);
