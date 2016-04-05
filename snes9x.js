@@ -19,7 +19,7 @@ function gamepads() {
 
     var interval;
 
-    if (!('ongamepadconnected' in window)) {
+    if (false && !('ongamepadconnected' in window)) {
         // No gamepad events available, poll instead.
         console.log('setup polling for gamepads')
         interval = setInterval(pollGamepads, 500);
@@ -69,7 +69,7 @@ function renderROMs() {
 }
 
 function maybeLoadROMStartup() {
-    if (false && window.ROMS.length > 0) {
+    if (true && window.ROMS.length > 0) {
         startGame(window.ROMS[0].name)
     }
     
@@ -91,13 +91,51 @@ function domContentLoaded() {
                 }
             }
             renderROMs()
-
             maybeLoadROMStartup()
         })
     }, function(e) { console.error('error reading FS',e) } )
+
+    document.getElementById("savefolder").addEventListener('click', function(evt) {
+        chrome.fileSystem.chooseEntry({type:'openDirectory'}, function(result) {
+            console.log('choosedirectory result',result);
+            var key = chrome.fileSystem.retainEntry(result)
+            chrome.storage.local.set({'retainstr':key})
+            // todo put in command with callback, timeout..
+            send_mount(result)
+        })
+    })
     
   document.getElementById('romfile').addEventListener(
       'change', handleFileSelect, false);
+}
+
+function maybeRestoreEntry() {
+    console.log('restore entry');
+    chrome.storage.local.get('retainstr', function(d){
+        if (d['retainstr']) {
+            console.log('attempt restore entry',d['retainstr'])
+            chrome.fileSystem.restoreEntry(d['retainstr'], function(result) {
+                console.log('restored entry result',result);
+                if (result) {
+                    send_mount(result)
+                }
+            })
+        }
+    })
+    
+}
+
+function send_mount(entry) {
+    console.log("SEND_MOUNT",entry);
+    var snes9x = document.getElementById("snes9x")
+    if (snes9x) {
+                document.getElementById("snes9x").postMessage({command:"mount",
+                                                           id: Math.floor(Math.random() * Math.pow(2,32)),
+                                                           filesystem:entry.filesystem,
+                                                               fullPath:entry.fullPath})
+    } else {
+        console.error('cant send_mount, native module not loaded');
+    }
 }
 
 function handleFileSelect(evt) {
@@ -138,7 +176,10 @@ function handleFileSelect(evt) {
 
   function onWriteSuccess() {
     console.log('startGame: ' + file.name);
-    startGame(file.name);
+      startGame(file.name);
+
+
+      
   }
 }
 
@@ -167,13 +208,34 @@ var SCALE=2
   nacl.setAttribute('ARG1',  filename);
   nacl.setAttribute('ARG2',  '-v1');  // Use "blocky" image scaling.
 
+
+    
   // Remove previous embed element.
   document.getElementById('listener').innerHTML = '';
     document.getElementById('listener').appendChild(nacl);
 
+    console.warn("waiting for debugger to attach...")
+
+    // Not owner bug
+        maybeRestoreEntry() // restore filesystem entry and pass message
+
+    setTimeout( function() {
+        // send a message
+        //console.log('sending message now!')
+        /*
+        nacl.postMessage({'message': 'hey there',
+                          'value':669})
+
+        nacl.postMessage({'command': 'eat poop',
+                          'id':669})
+*/
+    }, 1000)
+    
     listener.addEventListener('message', function(message) {
         if (typeof message.data == 'string' && message.data.startsWith('tty:')) {
             console.log('%c ' + message.data.slice(4,message.data.length), 'color:#a32')
+        } else {
+            console.log('nacl message',message.data)
         }
     }, true);
 }
